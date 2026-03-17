@@ -150,7 +150,7 @@ export default function Home() {
       {/* Hero */}
       <div style={{ background: 'linear-gradient(180deg,#0a1525 0%,var(--navy) 80%)', borderBottom: '1px solid rgba(201,153,58,0.2)', padding: '44px 20px 36px', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0, opacity: 0.03, backgroundImage: 'repeating-linear-gradient(0deg,transparent,transparent 40px,rgba(201,153,58,1) 40px,rgba(201,153,58,1) 41px),repeating-linear-gradient(90deg,transparent,transparent 40px,rgba(201,153,58,1) 40px,rgba(201,153,58,1) 41px)' }} />
-        <div className="anim" style={{ fontSize: 52, marginBottom: 12 }}><img src="/logo-fsspx.png" style={{width:80,height:80,objectFit:'contain'}} /></div>
+        <div className="anim" style={{ fontSize: 52, marginBottom: 12 }}><img src="https://raw.githubusercontent.com/Lucas-Engelmann/rifa-catalica1/main/logo-fsspx.png" style={{width:80,height:80,objectFit:'contain'}} /></div>
         <div className="anim stagger-1" style={{ fontSize: 11, letterSpacing: 4, color: 'var(--gold)', textTransform: 'uppercase', marginBottom: 10 }}>{CONFIG.subtitle}</div>
         <h1 className="anim stagger-2 display gold-text" style={{ fontSize: 'clamp(28px,6vw,52px)', fontWeight: 700, lineHeight: 1.1, marginBottom: 16 }}>{CONFIG.title}</h1>
         <p className="anim stagger-3" style={{ color: 'var(--muted)', fontSize: 14, maxWidth: 480, margin: '0 auto 28px', lineHeight: 1.7 }}>
