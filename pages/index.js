@@ -9,9 +9,9 @@ const CONFIG = {
     { place: '3º Prêmio', name: 'Kit Devocionais', desc: '5 livros de espiritualidade e oração', icon: '✝️', color: '#c0d8b0' },
   ],
   totalNumbers: 1000,
-  ticketPrice: 20,
-  drawDate: '15/04/2025',
-  drawTime: '19h00',
+  ticketPrice: 10,
+  drawDate: '15/08/2026',
+  drawTime: '19h30',
   pixKey: '47997514649',
   whatsappNumber: '5547997514649',
   adminPassword: process?.env?.NEXT_PUBLIC_ADMIN_PASSWORD || 'missaopenha2025',
@@ -151,7 +151,7 @@ export default function Home() {
       <div style={{ background: 'linear-gradient(180deg,#0a1525 0%,var(--navy) 80%)', borderBottom: '1px solid rgba(201,153,58,0.2)', padding: '44px 20px 36px', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0, opacity: 0.03, backgroundImage: 'repeating-linear-gradient(0deg,transparent,transparent 40px,rgba(201,153,58,1) 40px,rgba(201,153,58,1) 41px),repeating-linear-gradient(90deg,transparent,transparent 40px,rgba(201,153,58,1) 40px,rgba(201,153,58,1) 41px)' }} />
           <div className="anim" style={{ fontSize: 52, marginBottom: 12 }}><img src="/logo-fsspx1.png" style={{width:80,height:80,objectFit:'contain'}} /></div>        <p className="anim stagger-3" style={{ color: 'var(--muted)', fontSize: 14, maxWidth: 480, margin: '0 auto 28px', lineHeight: 1.7 }}>
-          Participe e concorra a prêmios incríveis enquanto apoia nossa comunidade paroquial. 🙏
+          Participe e concorra a prêmios incríveis enquanto apoia a FSSPX com a missão de Penha - SC. 🙏
         </p>
         <div className="anim stagger-4" style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 28 }}>
           <span className="pill" style={{ background: 'rgba(201,153,58,0.15)', color: 'var(--gold2)', border: '1px solid rgba(201,153,58,0.3)' }}>📅 Sorteio {CONFIG.drawDate}</span>
