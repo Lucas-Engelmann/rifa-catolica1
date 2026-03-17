@@ -1,20 +1,20 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 
 const CONFIG = {
-  title: 'Rifa Beneficente para Compra de Terreno',
-  subtitle: 'FSSPX Missão de Penha SC',
+  title: 'Rifa Beneficente',
+  subtitle: 'Paróquia São Francisco de Assis',
   prizes: [
-    { place: '1º Prêmio', name: 'Kit Eletrodomésticos', desc: 'Aspirador de pó + Liquidificador', icon: '🏆', color: '#f0c040' },
+    { place: '1º Prêmio', name: 'Kit Eletrodomésticos', desc: 'Geladeira + Microondas + Liquidificador', icon: '🏆', color: '#f0c040' },
     { place: '2º Prêmio', name: 'Bíblia + Coleção Católica', desc: '10 livros selecionados + Bíblia Sagrada capa dura', icon: '📖', color: '#a0c8f0' },
     { place: '3º Prêmio', name: 'Kit Devocionais', desc: '5 livros de espiritualidade e oração', icon: '✝️', color: '#c0d8b0' },
   ],
   totalNumbers: 1000,
-  ticketPrice: 10,
-  drawDate: '15/08/2026',
-  drawTime: '19h30',
-  pixKey: '47997514649',
-  whatsappNumber: '5547997514649',
-  adminPassword: process?.env?.NEXT_PUBLIC_ADMIN_PASSWORD || 'missaopenha2025',
+  ticketPrice: 20,
+  drawDate: '15/04/2025',
+  drawTime: '19h00',
+  pixKey: 'paroquia@safrancisco.org.br',
+  whatsappNumber: '5511999999999',
+  adminPassword: process?.env?.NEXT_PUBLIC_ADMIN_PASSWORD || 'paroquia2025',
 }
 
 const PER_PAGE = 200
@@ -150,8 +150,11 @@ export default function Home() {
       {/* Hero */}
       <div style={{ background: 'linear-gradient(180deg,#0a1525 0%,var(--navy) 80%)', borderBottom: '1px solid rgba(201,153,58,0.2)', padding: '44px 20px 36px', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0, opacity: 0.03, backgroundImage: 'repeating-linear-gradient(0deg,transparent,transparent 40px,rgba(201,153,58,1) 40px,rgba(201,153,58,1) 41px),repeating-linear-gradient(90deg,transparent,transparent 40px,rgba(201,153,58,1) 40px,rgba(201,153,58,1) 41px)' }} />
-          <div className="anim" style={{ fontSize: 52, marginBottom: 12 }}><img src="/logo-fsspx1.png" style={{width:80,height:80,objectFit:'contain'}} /></div>        <p className="anim stagger-3" style={{ color: 'var(--muted)', fontSize: 14, maxWidth: 480, margin: '0 auto 28px', lineHeight: 1.7 }}>
-          Participe e concorra a prêmios incríveis enquanto apoia a FSSPX com a missão de Penha - SC. 🙏
+        <div className="anim" style={{ fontSize: 52, marginBottom: 12 }}>✝️</div>
+        <div className="anim stagger-1" style={{ fontSize: 11, letterSpacing: 4, color: 'var(--gold)', textTransform: 'uppercase', marginBottom: 10 }}>{CONFIG.subtitle}</div>
+        <h1 className="anim stagger-2 display gold-text" style={{ fontSize: 'clamp(28px,6vw,52px)', fontWeight: 700, lineHeight: 1.1, marginBottom: 16 }}>{CONFIG.title}</h1>
+        <p className="anim stagger-3" style={{ color: 'var(--muted)', fontSize: 14, maxWidth: 480, margin: '0 auto 28px', lineHeight: 1.7 }}>
+          Participe e concorra a prêmios incríveis enquanto apoia nossa comunidade paroquial. 🙏
         </p>
         <div className="anim stagger-4" style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 28 }}>
           <span className="pill" style={{ background: 'rgba(201,153,58,0.15)', color: 'var(--gold2)', border: '1px solid rgba(201,153,58,0.3)' }}>📅 Sorteio {CONFIG.drawDate}</span>
@@ -522,68 +525,307 @@ export default function Home() {
 
   // ── ADMIN ─────────────────────────────────────────────────────────
   if (step === 'admin') return (
-    <div style={{ minHeight: '100vh', background: 'var(--navy)', paddingBottom: 40 }}>
-      <div style={{ maxWidth: 480, margin: '0 auto', padding: '40px 16px' }}>
-        <button className="btn-ghost" onClick={() => setStep('home')} style={{ padding: '8px 14px', fontSize: 13, marginBottom: 28 }}>← Voltar</button>
+    <AdminPanel
+      step={adminStep} setStep={setAdminStep}
+      senha={adminSenha} setSenha={setAdminSenha}
+      onBack={() => setStep('home')}
+      reservedSize={reservedSet.size}
+      sorteioResult={sorteioResult}
+      sorteioLoading={sorteioLoading}
+      handleSorteio={handleSorteio}
+    />
+  )
+
+  return null
+}
+
+// ── ADMIN PANEL COMPONENT ─────────────────────────────────────────
+function AdminPanel({ step, setStep, senha, setSenha, onBack, reservedSize, sorteioResult, sorteioLoading, handleSorteio }) {
+  const [tickets, setTickets] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [filterStatus, setFilterStatus] = useState('all')
+  const [search, setSearch] = useState('')
+  const [updatingId, setUpdatingId] = useState(null)
+
+  const fetchTickets = async () => {
+    setLoading(true)
+    try {
+      const res = await fetch('/api/admin-tickets')
+      const data = await res.json()
+      if (data.tickets) setTickets(data.tickets)
+    } catch (e) { console.error(e) }
+    setLoading(false)
+  }
+
+  const updateStatus = async (id, newStatus) => {
+    setUpdatingId(id)
+    try {
+      await fetch('/api/admin-tickets', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, status: newStatus })
+      })
+      setTickets(prev => prev.map(t => t.id === id ? { ...t, status: newStatus } : t))
+    } catch (e) { console.error(e) }
+    setUpdatingId(null)
+  }
+
+  const exportExcel = () => {
+    const rows = [
+      ['Código', 'Nome', 'WhatsApp', 'Email', 'CPF', 'Números', 'Valor', 'Status', 'Data'],
+      ...filteredTickets.map(t => [
+        t.codigo_confirmacao, t.nome, t.telefone, t.email, t.cpf || '-',
+        t.numeros?.join(', ') || t.numero,
+        `R$ ${t.valor_pago},00`, t.status,
+        new Date(t.created_at).toLocaleString('pt-BR')
+      ])
+    ]
+    const csv = rows.map(r => r.map(c => `"${c}"`).join(',')).join('\n')
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url; a.download = 'rifa-compradores.csv'; a.click()
+  }
+
+  const groupedByCode = tickets.reduce((acc, t) => {
+    const key = t.codigo_confirmacao
+    if (!acc[key]) acc[key] = { ...t, numeros: [] }
+    acc[key].numeros.push(t.numero)
+    return acc
+  }, {})
+  const grouped = Object.values(groupedByCode)
+
+  const filteredTickets = grouped.filter(t => {
+    const matchStatus = filterStatus === 'all' || t.status === filterStatus
+    const matchSearch = !search || t.nome?.toLowerCase().includes(search.toLowerCase()) ||
+      t.codigo_confirmacao?.toLowerCase().includes(search.toLowerCase()) ||
+      t.telefone?.includes(search) || t.email?.toLowerCase().includes(search.toLowerCase())
+    return matchStatus && matchSearch
+  })
+
+  const totalArrecadado = grouped.filter(t => t.status === 'pago').reduce((s, t) => s + (t.numeros.length * CONFIG.ticketPrice), 0)
+  const totalPendente = grouped.filter(t => t.status === 'pendente').reduce((s, t) => s + (t.numeros.length * CONFIG.ticketPrice), 0)
+  const totalPago = grouped.filter(t => t.status === 'pago').length
+  const totalPendenteCount = grouped.filter(t => t.status === 'pendente').length
+
+  // Gráfico de vendas por dia
+  const salesByDay = tickets.reduce((acc, t) => {
+    const day = new Date(t.created_at).toLocaleDateString('pt-BR')
+    acc[day] = (acc[day] || 0) + 1
+    return acc
+  }, {})
+  const chartDays = Object.entries(salesByDay).slice(-7)
+  const maxSales = Math.max(...chartDays.map(([, v]) => v), 1)
+
+  if (step === 'login') return (
+    <div style={{ minHeight: '100vh', background: 'var(--navy)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ width: '100%', maxWidth: 400, padding: '0 16px' }}>
+        <button className="btn-ghost" onClick={onBack} style={{ padding: '8px 14px', fontSize: 13, marginBottom: 28 }}>← Voltar</button>
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
-          <div style={{ fontSize: 40, marginBottom: 12 }}>🔐</div>
+          <div style={{ fontSize: 48, marginBottom: 12 }}>🔐</div>
           <h2 className="display gold-text" style={{ fontSize: 26, marginBottom: 4 }}>Área Administrativa</h2>
           <p style={{ color: 'var(--muted)', fontSize: 13 }}>Acesso restrito ao organizador</p>
         </div>
+        <div className="card" style={{ padding: 24 }}>
+          <label className="label">Senha de acesso</label>
+          <input className="input" type="password" placeholder="••••••••" value={senha}
+            onChange={e => setSenha(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter') {
+                if (senha === CONFIG.adminPassword) { setStep('dashboard'); fetchTickets() }
+                else alert('Senha incorreta!')
+              }
+            }}
+            style={{ marginBottom: 16 }} />
+          <button className="btn-gold" onClick={() => {
+            if (senha === CONFIG.adminPassword) { setStep('dashboard'); fetchTickets() }
+            else alert('Senha incorreta!')
+          }} style={{ width: '100%', padding: 14, fontSize: 15 }}>
+            Entrar
+          </button>
+        </div>
+      </div>
+    </div>
+  )
 
-        {adminStep === 'login' && (
-          <div className="card" style={{ padding: 24 }}>
-            <label className="label">Senha de acesso</label>
-            <input className="input" type="password" placeholder="••••••••" value={adminSenha} onChange={e => setAdminSenha(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && setAdminStep('dashboard')} style={{ marginBottom: 16 }} />
-            <button className="btn-gold" onClick={() => setAdminStep('dashboard')} style={{ width: '100%', padding: 14, fontSize: 15 }}>
-              Entrar
-            </button>
-          </div>
-        )}
+  return (
+    <div style={{ minHeight: '100vh', background: 'var(--navy)', paddingBottom: 40 }}>
+      {/* Header */}
+      <div style={{ background: 'rgba(13,27,46,0.97)', borderBottom: '1px solid rgba(201,153,58,0.2)', padding: '14px 20px', position: 'sticky', top: 0, zIndex: 50 }}>
+        <div style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <button className="btn-ghost" onClick={onBack} style={{ padding: '8px 14px', fontSize: 13 }}>← Sair</button>
+          <span className="display gold-text" style={{ fontSize: 18, fontWeight: 700, flex: 1 }}>🔐 Painel Administrativo</span>
+          <button className="btn-ghost" onClick={fetchTickets} style={{ padding: '8px 12px', fontSize: 12 }}>🔄 Atualizar</button>
+          <button onClick={exportExcel} style={{
+            background: 'rgba(74,175,120,0.15)', border: '1px solid rgba(74,175,120,0.4)',
+            borderRadius: 10, padding: '8px 16px', color: '#6dd4a0', cursor: 'pointer',
+            fontSize: 13, fontWeight: 700, fontFamily: 'Lato, sans-serif'
+          }}>📥 Exportar Excel</button>
+        </div>
+      </div>
 
-        {adminStep === 'dashboard' && (
-          <div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20 }}>
-              {[
-                { label: 'Total de Números', value: CONFIG.totalNumbers, color: 'var(--muted)' },
-                { label: 'Vendidos', value: reservedSet.size, color: 'var(--gold2)' },
-                { label: 'Disponíveis', value: CONFIG.totalNumbers - reservedSet.size, color: '#6dd4a0' },
-                { label: 'Arrecadado (est.)', value: `R$ ${reservedSet.size * CONFIG.ticketPrice},00`, color: '#90b8e8' },
-              ].map(s => (
-                <div key={s.label} className="card" style={{ padding: 16, textAlign: 'center' }}>
-                  <div style={{ fontSize: 22, fontWeight: 700, color: s.color }}>{s.value}</div>
-                  <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>{s.label}</div>
+      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '24px 16px' }}>
+
+        {/* Cards */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: 12, marginBottom: 24 }}>
+          {[
+            { icon: '🎟️', label: 'Total vendido', value: reservedSize, color: 'var(--gold2)', sub: `de ${CONFIG.totalNumbers}` },
+            { icon: '✅', label: 'Confirmados', value: totalPago, color: '#6dd4a0', sub: `R$ ${totalArrecadado},00` },
+            { icon: '⏳', label: 'Pendentes', value: totalPendenteCount, color: '#f0c060', sub: `R$ ${totalPendente},00` },
+            { icon: '💰', label: 'Total arrecadado', value: `R$ ${totalArrecadado},00`, color: '#90b8e8', sub: 'pagos confirmados' },
+            { icon: '📊', label: 'Potencial total', value: `R$ ${reservedSize * CONFIG.ticketPrice},00`, color: 'var(--muted)', sub: 'se todos pagarem' },
+          ].map(s => (
+            <div key={s.label} className="card" style={{ padding: 16, textAlign: 'center' }}>
+              <div style={{ fontSize: 22, marginBottom: 4 }}>{s.icon}</div>
+              <div style={{ fontSize: 20, fontWeight: 700, color: s.color }}>{s.value}</div>
+              <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2, textTransform: 'uppercase', letterSpacing: 1 }}>{s.label}</div>
+              <div style={{ fontSize: 11, color: 'var(--gold)', marginTop: 2 }}>{s.sub}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Gráfico de vendas por dia */}
+        {chartDays.length > 0 && (
+          <div className="card" style={{ padding: 20, marginBottom: 24 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--cream2)', marginBottom: 16 }}>📈 Vendas por dia (últimos 7 dias)</div>
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, height: 100 }}>
+              {chartDays.map(([day, count]) => (
+                <div key={day} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                  <div style={{ fontSize: 11, color: 'var(--gold2)', fontWeight: 700 }}>{count}</div>
+                  <div style={{
+                    width: '100%', borderRadius: '4px 4px 0 0',
+                    height: `${(count / maxSales) * 80}px`,
+                    background: 'linear-gradient(180deg, var(--gold2), var(--gold))',
+                    minHeight: 4
+                  }} />
+                  <div style={{ fontSize: 9, color: 'var(--muted)', textAlign: 'center', lineHeight: 1.2 }}>{day.slice(0, 5)}</div>
                 </div>
               ))}
             </div>
+          </div>
+        )}
 
-            <div className="card" style={{ padding: 24 }}>
-              <h3 className="display" style={{ fontSize: 18, color: 'var(--cream2)', marginBottom: 8 }}>🎲 Realizar Sorteio</h3>
-              <p style={{ color: 'var(--muted)', fontSize: 13, marginBottom: 20, lineHeight: 1.6 }}>
-                O sistema sorteia automaticamente entre todos os números vendidos. O resultado fica público na página de sorteio.
-              </p>
-              <button className="btn-gold" onClick={handleSorteio} disabled={sorteioLoading} style={{ width: '100%', padding: 14, fontSize: 15 }}>
-                {sorteioLoading ? '⏳ Sorteando...' : '🎲 Sortear Agora'}
-              </button>
+        {/* Sorteio */}
+        <div className="card" style={{ padding: 20, marginBottom: 24, display: 'flex', gap: 20, alignItems: 'center', flexWrap: 'wrap' }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--cream2)', marginBottom: 4 }}>🎲 Realizar Sorteio</div>
+            <div style={{ fontSize: 12, color: 'var(--muted)' }}>Sorteia aleatoriamente entre todos os números vendidos</div>
+          </div>
+          {sorteioResult && (
+            <div style={{ textAlign: 'center', padding: '8px 16px', background: 'rgba(201,153,58,0.1)', borderRadius: 10, border: '1px solid rgba(201,153,58,0.3)' }}>
+              <div style={{ fontSize: 11, color: 'var(--muted)' }}>Vencedor</div>
+              <div style={{ fontFamily: 'monospace', fontSize: 20, fontWeight: 700, color: 'var(--gold2)' }}>
+                {String(sorteioResult.numero_sorteado ?? sorteioResult.numero).padStart(4, '0')}
+              </div>
+              <div style={{ fontSize: 12, color: 'var(--cream)' }}>{sorteioResult.nome_vencedor ?? sorteioResult.nome}</div>
             </div>
+          )}
+          <button className="btn-gold" onClick={handleSorteio} disabled={sorteioLoading} style={{ padding: '12px 24px', fontSize: 14 }}>
+            {sorteioLoading ? '⏳ Sorteando...' : '🎲 Sortear Agora'}
+          </button>
+        </div>
 
-            {sorteioResult && (
-              <div className="card" style={{ padding: 20, marginTop: 14, borderColor: 'rgba(201,153,58,0.5)', background: 'rgba(201,153,58,0.05)', textAlign: 'center' }}>
-                <div style={{ fontSize: 11, letterSpacing: 2, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 8 }}>Último Resultado</div>
-                <div style={{ fontFamily: 'monospace', fontSize: 36, fontWeight: 700, color: 'var(--gold2)' }}>
-                  {String(sorteioResult.numero_sorteado ?? sorteioResult.numero).padStart(4, '0')}
-                </div>
-                <div style={{ color: 'var(--cream)', fontSize: 16, marginTop: 6 }}>
-                  {sorteioResult.nome_vencedor ?? sorteioResult.nome}
+        {/* Filtros e busca */}
+        <div style={{ display: 'flex', gap: 10, marginBottom: 14, flexWrap: 'wrap', alignItems: 'center' }}>
+          <input className="input" placeholder="🔍 Buscar por nome, código, WhatsApp ou e-mail..."
+            value={search} onChange={e => setSearch(e.target.value)}
+            style={{ flex: '1 1 240px' }} />
+          <div style={{ display: 'flex', gap: 8 }}>
+            {[
+              { val: 'all', label: `Todos (${grouped.length})` },
+              { val: 'pendente', label: `⏳ Pendentes (${totalPendenteCount})` },
+              { val: 'pago', label: `✅ Pagos (${totalPago})` },
+            ].map(f => (
+              <button key={f.val} onClick={() => setFilterStatus(f.val)} style={{
+                padding: '8px 14px', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                background: filterStatus === f.val ? 'rgba(201,153,58,0.2)' : 'rgba(255,255,255,0.04)',
+                border: filterStatus === f.val ? '1px solid var(--gold)' : '1px solid rgba(201,153,58,0.15)',
+                color: filterStatus === f.val ? 'var(--gold2)' : 'var(--muted)', fontFamily: 'Lato, sans-serif'
+              }}>{f.label}</button>
+            ))}
+          </div>
+        </div>
+
+        {/* Tabela */}
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: 40 }}><div className="spinner" /><p style={{ color: 'var(--muted)', marginTop: 16, fontSize: 13 }}>Carregando compradores...</p></div>
+        ) : filteredTickets.length === 0 ? (
+          <div className="card" style={{ padding: 40, textAlign: 'center', color: 'var(--muted)', fontSize: 14 }}>
+            {grouped.length === 0 ? '📭 Nenhuma compra realizada ainda.' : '🔍 Nenhum resultado encontrado.'}
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {filteredTickets.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).map(t => (
+              <div key={t.codigo_confirmacao} className="card" style={{
+                padding: 16,
+                borderLeft: `3px solid ${t.status === 'pago' ? '#4caf78' : t.status === 'cancelado' ? '#c05050' : '#c9993a'}`
+              }}>
+                <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+                  {/* Info principal */}
+                  <div style={{ flex: '1 1 200px' }}>
+                    <div style={{ fontWeight: 700, color: 'var(--cream)', fontSize: 15, marginBottom: 4 }}>{t.nome}</div>
+                    <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 2 }}>
+                      💬 <a href={`https://wa.me/55${t.telefone.replace(/\D/g,'')}`} target="_blank" rel="noopener noreferrer"
+                        style={{ color: '#6dd4a0', textDecoration: 'none' }}>{t.telefone}</a>
+                    </div>
+                    <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 2 }}>📧 {t.email}</div>
+                    {t.cpf && <div style={{ fontSize: 12, color: 'var(--muted)' }}>🪪 {t.cpf}</div>}
+                  </div>
+
+                  {/* Números */}
+                  <div style={{ flex: '1 1 160px' }}>
+                    <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 1 }}>Números</div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                      {t.numeros.sort((a,b)=>a-b).map(n => (
+                        <span key={n} style={{ background: 'rgba(201,153,58,0.12)', border: '1px solid rgba(201,153,58,0.3)', borderRadius: 5, padding: '2px 6px', fontSize: 11, fontFamily: 'monospace', color: 'var(--cream2)' }}>
+                          {String(n).padStart(4,'0')}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Valor e código */}
+                  <div style={{ textAlign: 'right', flex: '0 0 auto' }}>
+                    <div style={{ fontFamily: 'monospace', fontSize: 11, color: 'var(--muted)', marginBottom: 4 }}>{t.codigo_confirmacao}</div>
+                    <div style={{ fontWeight: 700, color: 'var(--gold2)', fontSize: 16, marginBottom: 4 }}>
+                      R$ {(t.numeros.length * CONFIG.ticketPrice)},00
+                    </div>
+                    <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 8 }}>
+                      {new Date(t.created_at).toLocaleString('pt-BR')}
+                    </div>
+
+                    {/* Status + botões */}
+                    <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                      <span style={{
+                        padding: '3px 10px', borderRadius: 12, fontSize: 11, fontWeight: 700,
+                        background: t.status === 'pago' ? 'rgba(74,175,120,0.2)' : t.status === 'cancelado' ? 'rgba(192,80,80,0.2)' : 'rgba(201,153,58,0.2)',
+                        color: t.status === 'pago' ? '#6dd4a0' : t.status === 'cancelado' ? '#f08080' : 'var(--gold2)',
+                        border: `1px solid ${t.status === 'pago' ? 'rgba(74,175,120,0.4)' : t.status === 'cancelado' ? 'rgba(192,80,80,0.4)' : 'rgba(201,153,58,0.4)'}`
+                      }}>
+                        {t.status === 'pago' ? '✅ Pago' : t.status === 'cancelado' ? '❌ Cancelado' : '⏳ Pendente'}
+                      </span>
+                      {t.status !== 'pago' && (
+                        <button onClick={() => updateStatus(t.id, 'pago')} disabled={updatingId === t.id} style={{
+                          background: 'rgba(74,175,120,0.15)', border: '1px solid rgba(74,175,120,0.4)',
+                          borderRadius: 8, padding: '3px 10px', color: '#6dd4a0', cursor: 'pointer',
+                          fontSize: 11, fontWeight: 700, fontFamily: 'Lato, sans-serif'
+                        }}>{updatingId === t.id ? '...' : '✓ Confirmar'}</button>
+                      )}
+                      {t.status !== 'cancelado' && (
+                        <button onClick={() => updateStatus(t.id, 'cancelado')} disabled={updatingId === t.id} style={{
+                          background: 'rgba(192,80,80,0.1)', border: '1px solid rgba(192,80,80,0.3)',
+                          borderRadius: 8, padding: '3px 10px', color: '#f08080', cursor: 'pointer',
+                          fontSize: 11, fontFamily: 'Lato, sans-serif'
+                        }}>{updatingId === t.id ? '...' : '✗ Cancelar'}</button>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
-            )}
+            ))}
           </div>
         )}
       </div>
     </div>
   )
-
-  return null
 }
