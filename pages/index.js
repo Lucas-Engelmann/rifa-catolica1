@@ -1,10 +1,10 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 
 const CONFIG = {
-  title: 'Rifa Beneficente',
-  subtitle: 'Paróquia São Francisco de Assis',
+  title: 'Rifa Beneficente para Compra de Terreno',
+  subtitle: 'FSSPX Missão de Penha SC',
   prizes: [
-    { place: '1º Prêmio', name: 'Kit Eletrodomésticos', desc: 'Geladeira + Microondas + Liquidificador', icon: '🏆', color: '#f0c040' },
+    { place: '1º Prêmio', name: 'Kit Eletrodomésticos', desc: 'Aspirador de pó + Liquidificador', icon: '🏆', color: '#f0c040' },
     { place: '2º Prêmio', name: 'Bíblia + Coleção Católica', desc: '10 livros selecionados + Bíblia Sagrada capa dura', icon: '📖', color: '#a0c8f0' },
     { place: '3º Prêmio', name: 'Kit Devocionais', desc: '5 livros de espiritualidade e oração', icon: '✝️', color: '#c0d8b0' },
   ],
@@ -12,9 +12,9 @@ const CONFIG = {
   ticketPrice: 20,
   drawDate: '15/04/2025',
   drawTime: '19h00',
-  pixKey: 'paroquia@safrancisco.org.br',
-  whatsappNumber: '5511999999999',
-  adminPassword: process?.env?.NEXT_PUBLIC_ADMIN_PASSWORD || 'paroquia2025',
+  pixKey: '47997514649',
+  whatsappNumber: '5547997514649',
+  adminPassword: process?.env?.NEXT_PUBLIC_ADMIN_PASSWORD || 'missaopenha2025',
 }
 
 const PER_PAGE = 200
